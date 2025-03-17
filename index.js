@@ -1,28 +1,38 @@
 import express from 'express';
-import { usernameController, searchController} from './controller.js';
+import router from './route.js';
 const app = express();
 const PORT = 3000;
 
-// Define the simple route
 app.get("/", (req, res) => {
     res.send("Hello, express")
 });
 
-// About route
-app.get("/about", (req, res) => {
-    res.send("Hello, About")
-});
+app.use('/user', router);
 
-// Contact route
-app.get("/contact", (req, res) => {
-    res.send("Hello, Contact")
-});
+app.use(express.json());
 
-// Dynamic route
-app.get("/user/:username", usernameController)
+app.post('/users', (req, res) => {
+    const { name, email } = req.body;
+    res.send({
+        message: `User ${name} with email ${email} is created successfully!`
+    })
+})
 
-// Query string, /search?keyword=express
-app.get("/search", searchController)
+app.put('/users/:id', (req, res) => {
+    const userId = req.params.id;
+    const { name, email } = req.body;
+    res.json({
+        message: `User ${userId} is updated with ${name}, ${email}`
+    })
+})
+
+app.delete('/users/:id', (req, res) => {
+    const userId = req.params.id
+    res.json({
+        message: `User with id ${userId} is deleted successfully!`
+    })
+})
+
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port http://localhost${PORT}`)
