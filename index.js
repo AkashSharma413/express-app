@@ -2,12 +2,11 @@ import express from 'express';
 const app = express();
 const PORT = 3000;
 
-// set EJS as the view engine
-app.set('view engine', 'ejs')
+app.use('/public', express.static('public'))
+app.use('/images', express.static('images'))
 
 app.get("/", (req, res) => {
-    const userName = 'Elon Musk'    
-    res.render('index', {userName})
+    res.send('Hello Express')
 });
 
 
