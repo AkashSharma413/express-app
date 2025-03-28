@@ -10,16 +10,40 @@ app.get("/", (req, res) => {
   res.send("Hello Express");
 });
 
-app.post('/person', express.json(), (req, res) => {
-    const {name, email, age} = req.body
+app.use(express.json());
+
+// Save/Add user to database
+app.post("/person", async (req, res) => {
+  try {
+    const { name, email, age } = req.body;
     const newPerson = new Person({
-        name,
-        age,
-        email
-    })
-    newPerson.save();
-    res.send("Person added")
-})
+      name,
+      age,
+      email,
+    });
+    await newPerson.save();
+    res.send("Person added");
+  } catch (error) {
+    res.send(error.message)
+  }
+});
+
+// Update user in database
+app.put("/person", async (req, res) => {
+  const { _id } = req.body;
+  const personData = await Person.findByIdAndUpdate(_id, {
+    name: "Akash Sharma",
+  });
+  console.log(personData);
+  res.send("Person updated");
+});
+
+// Delete user from database
+app.delete("/person/:id", async (req, res) => {
+  const { id } = req.params;
+  await Person.findByIdAndDelete(id);
+  res.send("User deleted");
+});
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port http://localhost${PORT}`);
