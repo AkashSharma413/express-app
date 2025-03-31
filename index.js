@@ -5,6 +5,7 @@ import session from "express-session";
 const app = express();
 const PORT = 3000;
 
+app.use(express.json());
 app.use(cookieParser());
 app.use(
   session({
@@ -14,35 +15,37 @@ app.use(
   })
 );
 
+const users = [];
+
 app.get("/", (req, res) => {
-  // res.cookie("name", "express-app", { maxAge: 10000});
-  res.cookie("name", "express-app");
   res.send("Hello Express");
 });
 
-app.get("/visit", (req, res) => {
-  if (req.session.page_views) {
-    req.session.page_views++;
-    res.send(`You have visited this page ${req.session.page_views} times`);
-  } else {
-    req.session.page_views = 1;
-    res.send("Welcome to this page for the first time!");
+app.post("/register", (req, res) => {
+  const { username, password } = req.body;
+  users.push({
+    username,
+    password,
+  });
+  res.send(`${username} registered successfully!`);
+});
+
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find((u) => u.username == username);
+  if (!user || user.password !== password) {
+    req.session.destroy();
+    return res.send("User Unauthorized!");
   }
+  req.session.user = user;
+  res.send("User Logged In!");
 });
 
-app.get("/remove-visit", (req, res) => {
-  req.session.destroy()
-  res.send("Session removed!")
-})
-
-app.get("/fetch", (req, res) => {
-  console.log(req.cookies);
-  res.send("API called");
-});
-
-app.get("/remove-cookie", (req, res) => {
-  res.clearCookie("name");
-  res.send("Cookie cleared");
+app.get("/dashboard", (req, res) => {
+  if (!req.session.user) {
+    return res.send("Unauthorized!");
+  }
+  res.send(`${req.session.user.username} authorized!`);
 });
 
 app.listen(PORT, () => {
