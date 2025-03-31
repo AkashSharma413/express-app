@@ -1,51 +1,49 @@
 import express from "express";
-import cookieParser from "cookie-parser";
-import session from "express-session";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(cookieParser());
-app.use(
-  session({
-    secret: "sample-secret",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
-
 const users = [];
 
 app.get("/", (req, res) => {
   res.send("Hello Express");
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res) => {
   const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
   users.push({
     username,
-    password,
+    password: hashedPassword,
   });
   res.send(`${username} registered successfully!`);
 });
 
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const user = users.find((u) => u.username == username);
-  if (!user || user.password !== password) {
-    req.session.destroy();
-    return res.send("User Unauthorized!");
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.send("Not Authorized!");
   }
-  req.session.user = user;
-  res.send("User Logged In!");
+  const token = jwt.sign({ username }, "test#secret");
+  res.send({ token });
 });
 
 app.get("/dashboard", (req, res) => {
-  if (!req.session.user) {
-    return res.send("Unauthorized!");
+  try {
+  const token = req.header("Authorization");
+  const decodedToken = jwt.verify(token, "test#secret");
+  if (decodedToken.username) {
+    res.send(`Welcome ${decodedToken.username}`);
+  } else {
+    res.send("Access Denied!");
   }
-  res.send(`${req.session.user.username} authorized!`);
+  } catch (error) {
+    res.send("Access Denied!");
+  }
 });
 
 app.listen(PORT, () => {
