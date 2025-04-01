@@ -1,49 +1,42 @@
 import express from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-const users = [];
 
 app.get("/", (req, res) => {
   res.send("Hello Express");
 });
 
-app.post("/register", async (req, res) => {
-  const { username, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  users.push({
-    username,
-    password: hashedPassword,
-  });
-  res.send(`${username} registered successfully!`);
+// Get all products
+app.get("/api/products", (req, res) => {
+  const products = [
+    { id: 1, name: "Laptop", price: 10000 },
+    { id: 2, name: "Mobile", price: 5000 },
+  ];
+  res.status(200).json({ products });
 });
 
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find((u) => u.username == username);
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.send("Not Authorized!");
+// Get a single product
+app.get("/api/products/:id", (req, res) => {
+  const products = [
+    { id: 1, name: "Laptop", price: 10000 },
+    { id: 2, name: "Mobile", price: 5000 },
+  ];
+  const product = products.find((p) => p.id === Number(req.params.id));
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
   }
-  const token = jwt.sign({ username }, "test#secret");
-  res.send({ token });
+  res.status(200).json(product);
 });
 
-app.get("/dashboard", (req, res) => {
-  try {
-  const token = req.header("Authorization");
-  const decodedToken = jwt.verify(token, "test#secret");
-  if (decodedToken.username) {
-    res.send(`Welcome ${decodedToken.username}`);
-  } else {
-    res.send("Access Denied!");
-  }
-  } catch (error) {
-    res.send("Access Denied!");
-  }
+// Add/create a product
+app.post("/api/products", (req, res) => {
+  const newProduct = req.body;
+  newProduct.id = Date.now();
+
+  res.status(201).json(newProduct);
 });
 
 app.listen(PORT, () => {
